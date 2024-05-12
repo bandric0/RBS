@@ -37,6 +37,7 @@ public class PermissionRepository {
             }
         } catch (SQLException e) {
             e.printStackTrace();
+            LOG.warn("Failed to list permissions for role with the id: " + roleId);
         }
         return permissions;
     }

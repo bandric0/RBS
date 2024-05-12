@@ -37,6 +37,7 @@ public class BookRepository {
             }
         } catch (SQLException e) {
             e.printStackTrace();
+            LOG.warn("Failed to get all books");
         }
         return bookList;
     }
@@ -54,6 +55,9 @@ public class BookRepository {
             while (rs.next()) {
                 bookList.add(createBookFromResultSet(rs));
             }
+        }catch (SQLException e) {
+            e.printStackTrace();
+            LOG.warn("Failed to lookup book for search term: " + searchTerm);
         }
         return bookList;
     }
@@ -68,6 +72,7 @@ public class BookRepository {
             }
         } catch (SQLException e) {
             e.printStackTrace();
+            LOG.warn("Failed to get book by id: " + bookId);
         }
         return null;
     }
@@ -95,12 +100,15 @@ public class BookRepository {
                         statement2.executeUpdate();
                     } catch (SQLException e) {
                         e.printStackTrace();
+                        LOG.warn("Failed to add book " + book.getTitle() + "to the genre " + genre.getName());
                     }
                 });
             }
         } catch (SQLException e) {
             e.printStackTrace();
+            LOG.warn("Failed to add book " + book.getTitle());
         }
+        AuditLogger.getAuditLogger(BookRepository.class).audit("Add book: " + book);
         return id;
     }
 
@@ -118,7 +126,9 @@ public class BookRepository {
             statement.executeUpdate(query4);
         } catch (SQLException e) {
             e.printStackTrace();
+            LOG.warn("Failed to delete the book with the id: " + bookId);
         }
+        AuditLogger.getAuditLogger(BookRepository.class).audit("Delete book: " + bookId);
     }
 
     private Book createBookFromResultSet(ResultSet rs) throws SQLException {
