@@ -8,7 +8,9 @@ import com.urosdragojevic.realbookstore.repository.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -34,12 +36,14 @@ public class PersonsController {
     }
 
     @GetMapping("/persons/{id}")
+    @PreAuthorize("hasAuthority('VIEW_PERSON')")
     public String person(@PathVariable int id, Model model) {
         model.addAttribute("person", personRepository.get("" + id));
         return "person";
     }
 
     @GetMapping("/myprofile")
+    @PreAuthorize("hasAuthority('VIEW_MY_PROFILE')")
     public String self(Model model, Authentication authentication) {
         User user = (User) authentication.getPrincipal();
         model.addAttribute("person", personRepository.get("" + user.getId()));
@@ -55,11 +59,19 @@ public class PersonsController {
     }
 
     @PostMapping("/update-person")
+    @PreAuthorize("hasAuthority('UPDATE_PERSON')")
     public String updatePerson(Person person, HttpSession session, @RequestParam("csrfToken") String csrfToken) throws AccessDeniedException {
         String csrf = session.getAttribute("CSRF_TOKEN").toString();
         if (!csrf.equalsIgnoreCase(csrfToken)) {
             throw new AccessDeniedException("Access Denied");
         }
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String username = authentication.getName();
+
+        if(!username.equalsIgnoreCase(person.getFirstName())){
+            throw new AccessDeniedException("Forbidden");
+        }
+
         personRepository.update(person);
         return "redirect:/persons/" + person.getId();
     }
